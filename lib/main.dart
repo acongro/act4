@@ -213,3 +213,116 @@ class SmileyUsingBaseShapesPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+class PartyEmojiFromBasePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = min(size.width, size.height) * 0.35;
+
+    // Face circle
+    canvas.drawCircle(c, r, Paint()..color = const Color(0xFFFFF176));
+
+    // Eyes as cheerful arcs
+    final eyePaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(3, r * 0.05)
+      ..strokeCap = StrokeCap.round;
+    final leftEyeRect = Rect.fromCircle(
+      center: Offset(c.dx - r * 0.38, c.dy - r * 0.20),
+      radius: r * 0.20,
+    );
+    final rightEyeRect = Rect.fromCircle(
+      center: Offset(c.dx + r * 0.38, c.dy - r * 0.20),
+      radius: r * 0.20,
+    );
+    canvas.drawArc(leftEyeRect, pi * 0.10, pi * 0.55, false, eyePaint);
+    canvas.drawArc(rightEyeRect, pi * 0.35, pi * 0.55, false, eyePaint);
+
+    // Big smile arc
+    final smileRect = Rect.fromCircle(
+      center: Offset(c.dx, c.dy + r * 0.18),
+      radius: r * 0.70,
+    );
+    final smilePaint = Paint()
+      ..color = Colors.deepOrange
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(6, r * 0.07)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(smileRect, pi * 0.10, pi * 0.85, false, smilePaint);
+
+    // Party hat
+    final hatPath = Path()
+      ..moveTo(c.dx, c.dy - r * 1.05) // top
+      ..lineTo(c.dx - r * 0.58, c.dy - r * 0.20) // left
+      ..lineTo(c.dx + r * 0.58, c.dy - r * 0.20) // right
+      ..close();
+    canvas.drawPath(hatPath, Paint()..color = const Color(0xFF7C4DFF));
+
+    // Hat band
+    final bandPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = max(4, r * 0.06)
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(c.dx - r * 0.48, c.dy - r * 0.24),
+      Offset(c.dx + r * 0.48, c.dy - r * 0.24),
+      bandPaint,
+    );
+
+    // Confetti
+    final rand = Random(42);
+    final List<Color> confettiColors = [
+      Colors.red,
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.pink,
+    ];
+
+    const pieces = 90;
+    const minSize = 4.0;
+    const maxSize = 10.0;
+
+    for (int i = 0; i < pieces; i++) {
+      // Random X across full canvas width
+      final x = rand.nextDouble() * size.width;
+
+      // Evenly spread Y from slightly above top to below bottom
+      final yBase = -20 + (size.height + 60) * (i / (pieces - 1));
+      final y = yBase + rand.nextDouble() * 6.0;
+
+      final pos = Offset(x, y);
+      final paint = Paint()..color = confettiColors[i % confettiColors.length];
+      final s = minSize + rand.nextDouble() * (maxSize - minSize);
+
+      switch (i % 3) {
+        case 0: // circle
+          canvas.drawCircle(pos, s * 0.5, paint);
+          break;
+        case 1: // tilted square
+          canvas.save();
+          canvas.translate(pos.dx, pos.dy);
+          canvas.rotate(rand.nextDouble() * 0.7 - 0.35); // ~ -20°..+20°
+          canvas.drawRect(
+            Rect.fromCenter(center: Offset.zero, width: s, height: s),
+            paint,
+          );
+          canvas.restore();
+          break;
+        default: // triangle
+          final tri = Path()
+            ..moveTo(pos.dx, pos.dy - s * 0.6)
+            ..lineTo(pos.dx - s * 0.6, pos.dy + s * 0.6)
+            ..lineTo(pos.dx + s * 0.6, pos.dy + s * 0.6)
+            ..close();
+          canvas.drawPath(tri, paint);
+      }
+    }
+  } // <-- closes paint()
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
