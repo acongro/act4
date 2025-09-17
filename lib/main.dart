@@ -220,6 +220,54 @@ class PartyEmojiFromBasePainter extends CustomPainter {
     final c = Offset(size.width / 2, size.height / 2);
     final r = min(size.width, size.height) * 0.35;
 
+    // --- Confetti FIRST (so it's behind the face/hat) ---
+    final rand = Random(42);
+    final List<Color> confettiColors = [
+      Colors.red,
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.pink,
+    ];
+    const pieces = 90;
+    const minSize = 4.0;
+    const maxSize = 10.0;
+
+    for (int i = 0; i < pieces; i++) {
+      final x = rand.nextDouble() * size.width;
+      final yBase = -20 + (size.height + 60) * (i / (pieces - 1));
+      final y = yBase + rand.nextDouble() * 6.0;
+
+      final pos = Offset(x, y);
+      final paint = Paint()..color = confettiColors[i % confettiColors.length];
+      final s = minSize + rand.nextDouble() * (maxSize - minSize);
+
+      switch (i % 3) {
+        case 0:
+          canvas.drawCircle(pos, s * 0.5, paint);
+          break;
+        case 1:
+          canvas.save();
+          canvas.translate(pos.dx, pos.dy);
+          canvas.rotate(rand.nextDouble() * 0.7 - 0.35);
+          canvas.drawRect(
+            Rect.fromCenter(center: Offset.zero, width: s, height: s),
+            paint,
+          );
+          canvas.restore();
+          break;
+        default:
+          final tri = Path()
+            ..moveTo(pos.dx, pos.dy - s * 0.6)
+            ..lineTo(pos.dx - s * 0.6, pos.dy + s * 0.6)
+            ..lineTo(pos.dx + s * 0.6, pos.dy + s * 0.6)
+            ..close();
+          canvas.drawPath(tri, paint);
+      }
+    }
+    // --- End confetti ---
+
     // Face circle
     canvas.drawCircle(c, r, Paint()..color = const Color(0xFFFFF176));
 
@@ -254,9 +302,9 @@ class PartyEmojiFromBasePainter extends CustomPainter {
 
     // Party hat
     final hatPath = Path()
-      ..moveTo(c.dx, c.dy - r * 1.05) // top
-      ..lineTo(c.dx - r * 0.58, c.dy - r * 0.20) // left
-      ..lineTo(c.dx + r * 0.58, c.dy - r * 0.20) // right
+      ..moveTo(c.dx, c.dy - r * 1.05)
+      ..lineTo(c.dx - r * 0.58, c.dy - r * 0.20)
+      ..lineTo(c.dx + r * 0.58, c.dy - r * 0.20)
       ..close();
     canvas.drawPath(hatPath, Paint()..color = const Color(0xFF7C4DFF));
 
@@ -270,58 +318,56 @@ class PartyEmojiFromBasePainter extends CustomPainter {
       Offset(c.dx + r * 0.48, c.dy - r * 0.24),
       bandPaint,
     );
+  }
 
-    // Confetti
-    final rand = Random(42);
-    final List<Color> confettiColors = [
-      Colors.red,
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.pink,
-    ];
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
-    const pieces = 90;
-    const minSize = 4.0;
-    const maxSize = 10.0;
+class HeartFromBaseShapesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
 
-    for (int i = 0; i < pieces; i++) {
-      // Random X across full canvas width
-      final x = rand.nextDouble() * size.width;
+    // Lobe size/placement
+    final r = min(size.width, size.height) * 0.18;
+    final lobeY = cy - r * 0.15; // slight lift
+    final leftCenter = Offset(cx - r, lobeY);
+    final rightCenter = Offset(cx + r, lobeY);
 
-      // Evenly spread Y from slightly above top to below bottom
-      final yBase = -20 + (size.height + 60) * (i / (pieces - 1));
-      final y = yBase + rand.nextDouble() * 6.0;
+    // Rects for arcs (top halves)
+    final leftRect = Rect.fromCircle(center: leftCenter, radius: r);
+    final rightRect = Rect.fromCircle(center: rightCenter, radius: r);
 
-      final pos = Offset(x, y);
-      final paint = Paint()..color = confettiColors[i % confettiColors.length];
-      final s = minSize + rand.nextDouble() * (maxSize - minSize);
+    // Key points
+    final topMiddle = Offset(cx, lobeY); // where lobes meet
+    final leftEdge = Offset(cx - 2 * r, lobeY); // left arc end
+    final rightEdge = Offset(cx + 2 * r, lobeY); // right arc start
+    final bottomTip = Offset(cx, cy + r * 1.25); // bottom point
 
-      switch (i % 3) {
-        case 0: // circle
-          canvas.drawCircle(pos, s * 0.5, paint);
-          break;
-        case 1: // tilted square
-          canvas.save();
-          canvas.translate(pos.dx, pos.dy);
-          canvas.rotate(rand.nextDouble() * 0.7 - 0.35); // ~ -20°..+20°
-          canvas.drawRect(
-            Rect.fromCenter(center: Offset.zero, width: s, height: s),
-            paint,
-          );
-          canvas.restore();
-          break;
-        default: // triangle
-          final tri = Path()
-            ..moveTo(pos.dx, pos.dy - s * 0.6)
-            ..lineTo(pos.dx - s * 0.6, pos.dy + s * 0.6)
-            ..lineTo(pos.dx + s * 0.6, pos.dy + s * 0.6)
-            ..close();
-          canvas.drawPath(tri, paint);
-      }
-    }
-  } // <-- closes paint()
+    final path = Path()
+      ..moveTo(topMiddle.dx, topMiddle.dy)
+      // Arc 1: LEFT lobe TOP half (0 → -π)
+      ..arcTo(leftRect, 0, -pi, false)
+      // Line 1: left edge → bottom tip
+      ..lineTo(bottomTip.dx, bottomTip.dy)
+      // Line 2: bottom tip → right edge
+      ..lineTo(rightEdge.dx, rightEdge.dy)
+      // Arc 2: RIGHT lobe TOP half (0 → -π) back to topMiddle
+      ..arcTo(rightRect, 0, -pi, false)
+      ..close();
+
+    // Red fill + red stroke (so arcs are clearly red)
+    final redFill = Paint()..color = const Color(0xFFFF1744);
+    final redStroke = Paint()
+      ..color = const Color(0xFFFF1744)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(2, r * 0.06);
+
+    canvas.drawPath(path, redFill);
+    canvas.drawPath(path, redStroke);
+  }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
