@@ -2,355 +2,352 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 
 void main() {
-  runApp(const ShapesDemoApp());
+  runApp(MyApp()); // main entry point
 }
 
-class ShapesDemoApp extends StatelessWidget {
-  const ShapesDemoApp({super.key});
-
+// app bar, scaffold, text
+class MyApp extends StatelessWidget {
+  // root, constructor
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Shapes Drawing Demo',
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
-      home: const ShapesDemoScreen(),
-    );
-  }
-}
-
-class ShapesDemoScreen extends StatelessWidget {
-  const ShapesDemoScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Shapes Drawing Demo')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Task 1: Basic Shapes',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 200,
-              child: CustomPaint(
-                painter: BasicShapesPainter(),
-                size: const Size(double.infinity, 200),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Task 2: Combined Shapes (Abstract Design)',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 300,
-              child: CustomPaint(
-                painter: CombinedShapesPainter(),
-                size: const Size(double.infinity, 300),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Task 3: Styled Shapes',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 300,
-              child: CustomPaint(
-                painter: StyledShapesPainter(),
-                size: const Size(double.infinity, 300),
-              ),
-            ),
-          ],
-        ),
+      // grab all common features with theme, navigate, title
+      home: DefaultTabController(
+        length: 4, // how many tabs
+        child: _TabsNonScrollableDemo(),
       ),
     );
   }
 }
 
+class _TabsNonScrollableDemo extends StatefulWidget {
+  @override
+  __TabsNonScrollableDemoState createState() => __TabsNonScrollableDemoState();
+}
+
+class __TabsNonScrollableDemoState extends State<_TabsNonScrollableDemo>
+    with SingleTickerProviderStateMixin, RestorationMixin {
+  late TabController _tabController;
+
+  final RestorableInt tabIndex = RestorableInt(0);
+
+  @override
+  String get restorationId => 'tab_non_scrollable_demo';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(tabIndex, 'tab_index');
+    _tabController.index = tabIndex.value;
+  }
+
+  @override
+  void initState() {
+    // lifecycle
+    super.initState();
+    _tabController = TabController(
+      initialIndex: 0,
+      length: 4,
+      vsync: this, // makes animation run smooth
+    );
+    _tabController.addListener(() {
+      setState(() {
+        tabIndex.value = _tabController.index;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    // used whenever you move, only load one tab at a time
+    _tabController.dispose(); // release all resources, prevent memory leaks
+    tabIndex.dispose();
+    super.dispose(); // ref parent class
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Define tab labels for tasks
+    final tabs = ['Task 1: Shapes', 'Task 2: Smiley', 'Party Emoji', 'Heart'];
+
+    return Scaffold(
+      // standard layout for screen
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text('Tabs Demo'),
+        bottom: TabBar(
+          controller: _tabController, // highlight active tab
+          tabs: [for (final tab in tabs) Tab(text: tab)],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // ---- TAB 1: Basic Shapes Demo ----
+          Center(
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: CustomPaint(
+                painter: BasicShapesPainter(),
+                size: Size.infinite,
+              ),
+            ),
+          ),
+
+          // ---- TAB 2: Smiley Face (compose from base shapes) ----
+          Center(
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: CustomPaint(
+                painter: SmileyUsingBaseShapesPainter(),
+                size: Size.infinite,
+              ),
+            ),
+          ),
+
+          // ---- TAB 3: Party Emoji (hat + confetti) ----
+          Center(
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: CustomPaint(
+                painter: PartyEmojiFromBasePainter(),
+                size: Size.infinite,
+              ),
+            ),
+          ),
+
+          // ---- TAB 4: Heart (two circles + triangle path) ----
+          Center(
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: CustomPaint(
+                painter: HeartFromBaseShapesPainter(),
+                size: Size.infinite,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ===================== Painters =====================
+
+// Task 1: Basic shapes — reuse the same primitives (square, circle, arc, rectangle, line, oval)
 class BasicShapesPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Determine the center of the canvas
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    final squareOffset = Offset(centerX - 80, centerY);
-    final circleOffset = Offset(centerX, centerY);
-    final arcOffset = Offset(centerX + 80, centerY);
-    final rectOffset = Offset(centerX - 160, centerY);
-    final lineStart = Offset(centerX - 200, centerY - 50);
-    final lineEnd = Offset(centerX - 140, centerY + 50);
-    final ovalOffset = Offset(centerX + 160, centerY);
+    final cx = size.width / 2;
+    final cy = size.height / 2;
 
-    // Draw a square
-    final squarePaint = Paint()
-      ..color = Colors.blue
-      ..style = PaintingStyle.fill;
+    final squareOffset = Offset(cx - 80, cy);
+    final circleOffset = Offset(cx, cy);
+    final arcOffset = Offset(cx + 80, cy);
+    final rectOffset = Offset(cx - 160, cy);
+    final ovalOffset = Offset(cx + 160, cy);
+
+    // Square
     canvas.drawRect(
       Rect.fromCenter(center: squareOffset, width: 60, height: 60),
-      squarePaint,
+      Paint()..color = Colors.blue,
     );
 
-    // Draw a circle
-    final circlePaint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(circleOffset, 30, circlePaint);
+    // Circle
+    canvas.drawCircle(circleOffset, 30, Paint()..color = Colors.red);
 
-    // Draw an arc
+    // Arc (stroke only)
     final arcPaint = Paint()
       ..color = Colors.green
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5;
     canvas.drawArc(
       Rect.fromCenter(center: arcOffset, width: 60, height: 60),
-      0, // start angle in radians
-      2.1, // sweep angle in radians (about 120 degrees)
-      false, // whether to use center
-      arcPaint,
-    );
-
-    // Draw a rectangle
-    final rectPaint = Paint()
-      ..color = Colors.orange
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromCenter(center: rectOffset, width: 80, height: 40),
-      rectPaint,
-    );
-
-    // Draw a line
-    final linePaint = Paint()
-      ..color = Colors.purple
-      ..strokeWidth = 3;
-    canvas.drawLine(lineStart, lineEnd, linePaint);
-
-    // Draw an oval
-    final ovalPaint = Paint()
-      ..color = Colors.teal
-      ..style = PaintingStyle.fill;
-    canvas.drawOval(
-      Rect.fromCenter(center: ovalOffset, width: 80, height: 40),
-      ovalPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
-}
-
-class CombinedShapesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-
-    // Background gradient
-    final backgroundGradient = RadialGradient(
-      center: Alignment.center,
-      radius: 0.8,
-      colors: [Colors.blue.shade100, Colors.white],
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()
-        ..shader = backgroundGradient.createShader(
-          Rect.fromLTWH(0, 0, size.width, size.height),
-        ),
-    );
-
-    // Draw a sun (circle with rays)
-    final sunPaint = Paint()
-      ..color = Colors.yellow
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(centerX, centerY - 40), 40, sunPaint);
-
-    // Sun rays (lines)
-    final rayPaint = Paint()
-      ..color = Colors.yellow
-      ..strokeWidth = 3;
-    for (int i = 0; i < 8; i++) {
-      final angle = i * (pi / 4); // Use pi from dart:math
-      final dx = cos(angle) * 60;
-      final dy = sin(angle) * 60;
-      canvas.drawLine(
-        Offset(centerX, centerY - 40),
-        Offset(centerX + dx, centerY - 40 + dy),
-        rayPaint,
-      );
-    }
-
-    // Draw a house (square with triangle roof)
-    final housePaint = Paint()
-      ..color = Colors.brown
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(centerX, centerY + 40),
-        width: 80,
-        height: 80,
-      ),
-      housePaint,
-    );
-
-    final roofPaint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
-    final roofPath = Path()
-      ..moveTo(centerX - 60, centerY)
-      ..lineTo(centerX + 60, centerY)
-      ..lineTo(centerX, centerY - 60)
-      ..close();
-    canvas.drawPath(roofPath, roofPaint);
-
-    // Draw a door (rectangle)
-    final doorPaint = Paint()
-      ..color = Colors.blueGrey
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(centerX, centerY + 60),
-        width: 30,
-        height: 50,
-      ),
-      doorPaint,
-    );
-
-    // Draw windows (squares)
-    final windowPaint = Paint()
-      ..color = Colors.blue.shade200
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(centerX - 25, centerY + 20),
-        width: 20,
-        height: 20,
-      ),
-      windowPaint,
-    );
-    canvas.drawRect(
-      Rect.fromCenter(
-        center: Offset(centerX + 25, centerY + 20),
-        width: 20,
-        height: 20,
-      ),
-      windowPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
-}
-
-class StyledShapesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-
-    // Draw a gradient-filled rectangle
-    final rectGradient = LinearGradient(
-      begin: Alignment.centerLeft,
-      end: Alignment.centerRight,
-      colors: [Colors.red, Colors.blue],
-    );
-    final rect = Rect.fromCenter(
-      center: Offset(centerX, centerY - 100),
-      width: 200,
-      height: 60,
-    );
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = rectGradient.createShader(rect)
-        ..style = PaintingStyle.fill,
-    );
-
-    // Draw a circle with a border
-    final circlePaint = Paint()
-      ..color = Colors.green
-      ..style = PaintingStyle.fill;
-    final circleBorderPaint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 4;
-    canvas.drawCircle(Offset(centerX - 80, centerY), 40, circlePaint);
-    canvas.drawCircle(Offset(centerX - 80, centerY), 40, circleBorderPaint);
-
-    // Draw a transparent oval
-    final ovalPaint = Paint()
-      ..color = Colors.purple.withOpacity(0.5)
-      ..style = PaintingStyle.fill;
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(centerX + 80, centerY),
-        width: 100,
-        height: 60,
-      ),
-      ovalPaint,
-    );
-
-    // Draw a dashed line using a custom path effect
-    final dashPaint = Paint()
-      ..color = Colors.orange
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    // We draw a series of short lines and spaces
-    final path = Path();
-    double startX = centerX - 100;
-    const dashLength = 10.0;
-    const spaceLength = 5.0;
-    while (startX < centerX + 100) {
-      path.moveTo(startX, centerY + 80);
-      path.lineTo(min(startX + dashLength, centerX + 100), centerY + 80);
-      startX += dashLength + spaceLength;
-    }
-    canvas.drawPath(path, dashPaint);
-
-    // Draw a gradient arc
-    final arcGradient = SweepGradient(
-      center: Alignment.centerRight,
-      startAngle: 0,
-      endAngle: pi, // Use pi from dart:math
-      colors: [Colors.red, Colors.yellow, Colors.green],
-    );
-    final arcRect = Rect.fromCenter(
-      center: Offset(centerX, centerY + 100),
-      width: 120,
-      height: 120,
-    );
-    final arcPaint = Paint()
-      ..shader = arcGradient.createShader(arcRect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromCenter(
-        center: Offset(centerX, centerY + 100),
-        width: 100,
-        height: 100,
-      ),
-      0, // start angle
-      2.5, // sweep angle
+      0,
+      2.2,
       false,
       arcPaint,
     );
+
+    // Rectangle
+    canvas.drawRect(
+      Rect.fromCenter(center: rectOffset, width: 80, height: 40),
+      Paint()..color = Colors.orange,
+    );
+
+    // Oval
+    canvas.drawOval(
+      Rect.fromCenter(center: ovalOffset, width: 80, height: 40),
+      Paint()..color = Colors.teal,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Task 2: Smiley — face circle, eyes (circles), smile (arc)
+class SmileyUsingBaseShapesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = min(size.width, size.height) * 0.35;
+
+    // Face (big circle)
+    final facePaint = Paint()..color = const Color(0xFFFFEB3B);
+    canvas.drawCircle(c, r, facePaint);
+
+    // Eyes (small circles)
+    final eyePaint = Paint()..color = Colors.black;
+    final eyeDX = r * 0.35, eyeDY = -r * 0.2;
+    canvas.drawCircle(Offset(c.dx - eyeDX, c.dy + eyeDY), r * 0.09, eyePaint);
+    canvas.drawCircle(Offset(c.dx + eyeDX, c.dy + eyeDY), r * 0.09, eyePaint);
+
+    // Smile (arc)
+    final smileRect = Rect.fromCircle(
+      center: Offset(c.dx, c.dy + r * 0.10),
+      radius: r * 0.60,
+    );
+    final smilePaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(4, r * 0.06)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(smileRect, pi * 0.12, pi * 0.70, false, smilePaint);
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Party emoji — face, eyes as arcs, smile, party hat (triangle), confetti (circles/squares/triangles)
+class PartyEmojiFromBasePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = min(size.width, size.height) * 0.35;
+
+    // Face circle
+    canvas.drawCircle(c, r, Paint()..color = const Color(0xFFFFF176));
+
+    // Eyes as cheerful arcs
+    final eyePaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(3, r * 0.05)
+      ..strokeCap = StrokeCap.round;
+    final leftEyeRect = Rect.fromCircle(
+      center: Offset(c.dx - r * 0.38, c.dy - r * 0.20),
+      radius: r * 0.20,
+    );
+    final rightEyeRect = Rect.fromCircle(
+      center: Offset(c.dx + r * 0.38, c.dy - r * 0.20),
+      radius: r * 0.20,
+    );
+    canvas.drawArc(leftEyeRect, pi * 0.10, pi * 0.55, false, eyePaint);
+    canvas.drawArc(rightEyeRect, pi * 0.35, pi * 0.55, false, eyePaint);
+
+    // Big smile arc
+    final smileRect = Rect.fromCircle(
+      center: Offset(c.dx, c.dy + r * 0.18),
+      radius: r * 0.70,
+    );
+    final smilePaint = Paint()
+      ..color = Colors.deepOrange
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(6, r * 0.07)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(smileRect, pi * 0.10, pi * 0.85, false, smilePaint);
+
+    // Party hat = triangle path (reuse roof idea)
+    final hatPath = Path()
+      ..moveTo(c.dx, c.dy - r * 1.05) // top
+      ..lineTo(c.dx - r * 0.58, c.dy - r * 0.20) // left
+      ..lineTo(c.dx + r * 0.58, c.dy - r * 0.20) // right
+      ..close();
+    canvas.drawPath(hatPath, Paint()..color = const Color(0xFF7C4DFF));
+
+    // Hat band = line
+    final bandPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = max(4, r * 0.06)
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(c.dx - r * 0.48, c.dy - r * 0.24),
+      Offset(c.dx + r * 0.48, c.dy - r * 0.24),
+      bandPaint,
+    );
+
+    // Confetti = circles, squares, tiny triangles
+    final colors = [
+      Colors.red,
+      Colors.blue,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.pink,
+    ];
+    for (int i = 0; i < 30; i++) {
+      final angle = (i / 30) * 2 * pi;
+      final dist = r + 18 + (i % 3) * 6;
+      final p = Offset(c.dx + cos(angle) * dist, c.dy + sin(angle) * dist);
+      final paint = Paint()..color = colors[i % colors.length];
+
+      final kind = i % 3;
+      const s = 6.0;
+      if (kind == 0) {
+        canvas.drawCircle(p, 3, paint); // circle
+      } else if (kind == 1) {
+        canvas.drawRect(
+          Rect.fromCenter(center: p, width: s, height: s),
+          paint,
+        ); // square
+      } else {
+        final tri = Path()
+          ..moveTo(p.dx, p.dy - s * 0.8)
+          ..lineTo(p.dx - s * 0.7, p.dy + s * 0.6)
+          ..lineTo(p.dx + s * 0.7, p.dy + s * 0.6)
+          ..close();
+        canvas.drawPath(tri, paint); // triangle
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Heart — composed from two circles (lobes) + triangle path (point)
+class HeartFromBaseShapesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final fill = Paint()..color = const Color(0xFFFF1744);
+    final outline = Paint()
+      ..color = Colors.black.withOpacity(0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Bottom point (triangle path — like roof)
+    final tri = Path()
+      ..moveTo(c.dx, c.dy + 70) // bottom tip
+      ..lineTo(c.dx - 70, c.dy) // left base
+      ..lineTo(c.dx + 70, c.dy) // right base
+      ..close();
+    canvas.drawPath(tri, fill);
+
+    // Two top lobes (circles)
+    const r = 40.0;
+    final leftCenter = Offset(c.dx - r, c.dy - 10);
+    final rightCenter = Offset(c.dx + r, c.dy - 10);
+    canvas.drawCircle(leftCenter, r, fill);
+    canvas.drawCircle(rightCenter, r, fill);
+
+    // Optional outline to show edges
+    canvas.drawPath(tri, outline);
+    canvas.drawCircle(leftCenter, r, outline);
+    canvas.drawCircle(rightCenter, r, outline);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
