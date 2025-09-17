@@ -180,3 +180,36 @@ class BasicShapesPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+class SmileyUsingBaseShapesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = min(size.width, size.height) * 0.35;
+
+    // Face
+    final facePaint = Paint()..color = const Color(0xFFFFEB3B);
+    canvas.drawCircle(c, r, facePaint);
+
+    // Eyes
+    final eyePaint = Paint()..color = Colors.black;
+    final eyeDX = r * 0.35, eyeDY = -r * 0.2;
+    canvas.drawCircle(Offset(c.dx - eyeDX, c.dy + eyeDY), r * 0.09, eyePaint);
+    canvas.drawCircle(Offset(c.dx + eyeDX, c.dy + eyeDY), r * 0.09, eyePaint);
+
+    // Smile
+    final smileRect = Rect.fromCircle(
+      center: Offset(c.dx, c.dy + r * 0.10),
+      radius: r * 0.60,
+    );
+    final smilePaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = max(4, r * 0.06)
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(smileRect, pi * 0.12, pi * 0.70, false, smilePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
