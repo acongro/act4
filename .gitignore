@@ -11,22 +11,7 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-.dart_tool
-.idea
-/act4
-/android
-/build
-/ios
-/linux
-/macos
-/test
-/web
-/windows
-.metadata
-/analysis_options.yaml
-/pubspec.lock
-/pubspec.yaml
-/README.md
+
 # IntelliJ related
 *.iml
 *.ipr
